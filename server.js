@@ -5,10 +5,18 @@ const path = require('path');
 const port = process.env.PORT || 3000;
 const html = fs.readFileSync(path.join(__dirname, 'index.html'));
 
-// In-memory stores — survive restarts only while process lives (fine for a trip planner)
-const votes = {};  // {key: {up, down}}
-const notes = {};  // {dayKey: [{name, text, ts}]}
-const items = {};  // {tableKey: [{name, url, addedBy}]}
+// In-memory stores (votes/notes/items reset on redeploy — fine for a trip planner)
+const votes = {};
+const notes = {};
+const items = {};
+
+// Text edits persist to disk so they survive redeploys
+const EDITS_FILE = path.join(__dirname, 'edits.json');
+let edits = {};
+try { edits = JSON.parse(fs.readFileSync(EDITS_FILE, 'utf8')); } catch (e) {}
+function saveEdits() {
+  try { fs.writeFileSync(EDITS_FILE, JSON.stringify(edits)); } catch (e) {}
+}
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -27,12 +35,36 @@ function json(res, data, status) {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
 
-  // GET /api/state — return all shared state in one round-trip
+  // GET /api/state — votes + notes + items in one round-trip
   if (req.method === 'GET' && url.pathname === '/api/state') {
     return json(res, { votes, notes, items });
   }
 
-  // POST /api/vote — {key, dir ('up'|'down'|null), prev ('up'|'down'|null)}
+  // GET /api/edits — all saved text edits
+  if (req.method === 'GET' && url.pathname === '/api/edits') {
+    return json(res, edits);
+  }
+
+  // POST /api/edit — {eid, html}  (html=null clears the edit)
+  if (req.method === 'POST' && url.pathname === '/api/edit') {
+    try {
+      const { eid, html: newHtml } = await parseBody(req);
+      const key = String(eid);
+      if (newHtml === null || newHtml === undefined) delete edits[key];
+      else edits[key] = String(newHtml).slice(0, 5000);
+      saveEdits();
+      return json(res, { ok: true });
+    } catch (e) { res.writeHead(400); res.end('bad request'); return; }
+  }
+
+  // POST /api/edits/reset — wipe all text edits
+  if (req.method === 'POST' && url.pathname === '/api/edits/reset') {
+    edits = {};
+    saveEdits();
+    return json(res, { ok: true });
+  }
+
+  // POST /api/vote — {key, dir, prev}
   if (req.method === 'POST' && url.pathname === '/api/vote') {
     try {
       const { key, dir, prev } = await parseBody(req);

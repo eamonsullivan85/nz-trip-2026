@@ -203,6 +203,21 @@
   .aif-row{display:flex;gap:6px;margin-top:2px}
   .aif-save{background:var(--qt);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:.82rem;cursor:pointer}
   .aif-cancel{background:none;border:1px solid var(--line);border-radius:5px;padding:5px 10px;font-size:.82rem;cursor:pointer;color:var(--muted)}
+  /* --- admin edit mode --- */
+  #edit-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:#1d2733;color:#fff;
+    padding:9px 18px;align-items:center;gap:14px;font-size:.88rem;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  #edit-bar.on{display:flex}
+  #edit-bar strong{flex:1}
+  #edit-save-status{font-size:.8rem;opacity:.8;min-width:60px}
+  #edit-bar button{background:#fff;color:#1d2733;border:none;border-radius:5px;padding:4px 12px;font-size:.82rem;cursor:pointer;font-weight:700}
+  #edit-bar .danger-btn{background:#c2410c;color:#fff;margin-left:6px}
+  body.edit-mode{padding-top:42px}
+  body.edit-mode [data-eid]{outline:2px dashed transparent;border-radius:3px;transition:outline-color .15s}
+  body.edit-mode [data-eid]:hover{outline-color:#0f4c9b;cursor:text}
+  body.edit-mode [data-eid]:focus{outline:2px solid #0f4c9b;outline-offset:2px;background:rgba(15,76,155,.04)}
+  #admin-trigger{position:fixed;bottom:12px;right:12px;opacity:.2;cursor:pointer;font-size:1.1rem;
+    background:none;border:none;padding:6px;z-index:100}
+  #admin-trigger:hover{opacity:.6}
 </style>
 </head>
 <body>
@@ -735,7 +750,14 @@
 
 </main>
 
+<div id="edit-bar">
+  <strong>✏️ Edit mode — click any text to edit it</strong>
+  <span id="edit-save-status"></span>
+  <button id="edit-reset-btn" class="danger-btn" title="Wipe all text edits and restore defaults">Reset all edits</button>
+  <button id="edit-done-btn">Done</button>
+</div>
 
+<button id="admin-trigger" title="Admin edit mode">⚙</button>
 
 <script>
   document.body.classList.add('has-js');
@@ -937,6 +959,96 @@
   }
 
   initInteractive();
+
+  /* ============================================================
+     ADMIN EDIT MODE
+     Password: nz2026  (enter via the ⚙ button, bottom-right)
+     Edits persist to disk on the server — survive redeploys.
+     Each editable element is identified by its sequential index
+     in document order, so the same element is always the same key.
+  ============================================================ */
+  const EDIT_SELECTORS = [
+    '.day .dsub', '.day .acc',
+    '.day .plan .booked-row', '.day .plan .split',
+    '.day .plan ul li',
+    '.day .recs .rec',
+    '.day-tile .dttl', '.day-tile ul li',
+    'h2.sec', 'h3.grp',
+    '.accom span',
+    '.cond-grid div',
+    '.briefing p', '.briefing h3',
+    '.colcard h4', '.colcard ul li',
+  ].join(',');
+
+  let textEdits = {};
+  let editModeOn = false;
+
+  function getEditEls() { return [...document.querySelectorAll(EDIT_SELECTORS)]; }
+
+  function showEditStatus(msg) {
+    const s = document.getElementById('edit-save-status');
+    if (s) { s.textContent = msg; if (msg) setTimeout(() => { s.textContent = ''; }, 2000); }
+  }
+
+  async function applyTextEdits() {
+    try {
+      const r = await fetch('/api/edits');
+      textEdits = await r.json();
+    } catch(e) {}
+    getEditEls().forEach((el, i) => {
+      if (textEdits[i] !== undefined) el.innerHTML = textEdits[i];
+    });
+  }
+
+  function enableEditMode() {
+    editModeOn = true;
+    document.body.classList.add('edit-mode');
+    document.getElementById('edit-bar').classList.add('on');
+    getEditEls().forEach((el, i) => {
+      if (el.dataset.eid !== undefined) return;
+      el.dataset.eid = String(i);
+      el.contentEditable = 'true';
+      el.addEventListener('blur', async () => {
+        showEditStatus('Saving…');
+        try {
+          await fetch('/api/edit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ eid: i, html: el.innerHTML })
+          });
+          textEdits[i] = el.innerHTML;
+          showEditStatus('Saved ✓');
+        } catch(e) { showEditStatus('Error saving'); }
+      });
+    });
+  }
+
+  function exitEditMode() {
+    editModeOn = false;
+    document.body.classList.remove('edit-mode');
+    document.getElementById('edit-bar').classList.remove('on');
+    getEditEls().forEach(el => { el.contentEditable = 'false'; });
+  }
+
+  document.getElementById('admin-trigger').addEventListener('click', () => {
+    if (editModeOn) { exitEditMode(); return; }
+    const pw = prompt('Admin password:');
+    if (pw === 'nz2026') enableEditMode();
+  });
+
+  document.getElementById('edit-done-btn').addEventListener('click', exitEditMode);
+
+  document.getElementById('edit-reset-btn').addEventListener('click', async () => {
+    if (!confirm('Reset ALL text edits back to the original itinerary? This cannot be undone.')) return;
+    try {
+      await fetch('/api/edits/reset', { method: 'POST' });
+      textEdits = {};
+      // Reload so original HTML is restored
+      location.reload();
+    } catch(e) { showEditStatus('Error resetting'); }
+  });
+
+  applyTextEdits();
 </script>
 </body>
 </html>

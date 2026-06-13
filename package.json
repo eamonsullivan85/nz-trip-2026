@@ -1,0 +1,12 @@
+{
+  "name": "nz-trip-2026",
+  "version": "1.0.0",
+  "private": true,
+  "description": "New Zealand family trip 2026 itinerary",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

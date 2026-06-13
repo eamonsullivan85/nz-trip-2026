@@ -165,7 +165,43 @@
   .accom b{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px}
   .wi{color:#c2410c} .wi b{color:#c2410c} .wi .tbc{color:#c2410c;font-weight:700}
   .t-tbc{color:#c2410c}
-  .spa-big{display:block;width:100%;border-radius:8px;margin-top:8px;box-shadow:0 4px 12px rgba(20,30,50,.28)}
+  .spa-big{display:block;width:72%;max-width:170px;border-radius:8px;margin-top:8px;box-shadow:0 4px 12px rgba(20,30,50,.28)}
+
+  /* --- vote widgets --- */
+  .vwrap{display:inline-flex;gap:4px;align-items:center;vertical-align:middle}
+  .vbtn{background:none;border:1px solid #dde3ec;border-radius:20px;padding:2px 8px;font-size:.78rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:3px;color:var(--muted);transition:background .15s,border-color .15s;line-height:1.4}
+  .vbtn:hover{background:#f0f4fb;border-color:#b0bccc}
+  .vbtn.vactive.vup{background:#e7f7ee;border-color:#1f9d55;color:#1f9d55}
+  .vbtn.vactive.vdown{background:#fdebd9;border-color:#c2410c;color:#c2410c}
+  .vc-n{font-weight:700;min-width:12px;text-align:center;font-size:.75rem}
+  .vtd{white-space:nowrap}
+  .tbc-vwrap{display:inline-flex;gap:3px;vertical-align:middle;margin-right:5px}
+  /* --- notes section --- */
+  .notes-section{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .notes-hd{margin:0 0 8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:800}
+  .note-list{margin:0 0 8px}
+  .note-item{background:#f5f7fa;border-radius:6px;padding:6px 9px;margin:4px 0;font-size:.82rem;line-height:1.4}
+  .note-author{font-weight:700;color:var(--ink);margin-right:4px}
+  .note-text{color:#3a4756}
+  .no-notes{font-size:.82rem;color:var(--muted);margin:0 0 8px;font-style:italic}
+  .note-input-wrap{display:flex;flex-direction:column;gap:5px}
+  .note-name-in,.note-text-in{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:.82rem;
+    width:100%;font-family:inherit;box-sizing:border-box}
+  .note-submit-btn{background:var(--qt);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:.82rem;
+    cursor:pointer;align-self:flex-end}
+  .note-submit-btn:hover{opacity:.88}
+  /* --- add item to table --- */
+  .add-row-btn{background:none;border:1px dashed #b0bccc;border-radius:6px;padding:5px 12px;font-size:.8rem;
+    color:var(--muted);cursor:pointer;margin-top:6px;width:100%;text-align:left;display:block}
+  .add-row-btn:hover{background:#f5f7fa;color:var(--ink)}
+  .add-item-form{display:none;background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:6px}
+  .add-item-form.open{display:block}
+  .add-item-form input{border:1px solid var(--line);border-radius:5px;padding:5px 8px;font-size:.82rem;
+    width:100%;margin-bottom:5px;font-family:inherit;box-sizing:border-box}
+  .aif-row{display:flex;gap:6px;margin-top:2px}
+  .aif-save{background:var(--qt);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:.82rem;cursor:pointer}
+  .aif-cancel{background:none;border:1px solid var(--line);border-radius:5px;padding:5px 10px;font-size:.82rem;cursor:pointer;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -730,6 +766,177 @@
     names.forEach((n)=>{const im=document.createElement('img');im.src=PIC[n];im.className='roster';c.appendChild(im);});}
   lineup('sull-line',['EAMON','NAOMIWED','LEO','LIVVY']);
   lineup('burg-line',['SCOTT','JO','EVELYN','GUS']);
+
+  /* ============================================================
+     VOTES · NOTES · ADD SUGGESTIONS
+     All state lives on the server (in-memory), shared across devices.
+     localStorage only tracks: which way THIS user voted, their name.
+  ============================================================ */
+  const NZ_MV='nz26_mv', NZ_NAME='nz26_name';
+  let SV={}, SN={}, SI={};
+
+  function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+  function getMyVotes(){try{return JSON.parse(localStorage.getItem(NZ_MV)||'{}')}catch(e){return{}}}
+  function getMyName(){return localStorage.getItem(NZ_NAME)||''}
+  function setMyName(n){localStorage.setItem(NZ_NAME,n)}
+
+  function updateVBtn(btn,dir,count,myDir){
+    btn.innerHTML=(dir==='up'?'👍':'👎')+' <span class="vc-n">'+count+'</span>';
+    btn.classList.toggle('vactive',myDir===dir);
+  }
+
+  function makeVoteWidget(key){
+    const wrap=document.createElement('span');wrap.className='vwrap';
+    const up=document.createElement('button');up.type='button';up.className='vbtn vup';
+    const dn=document.createElement('button');dn.type='button';dn.className='vbtn vdown';
+    function refresh(){
+      const v=SV[key]||{up:0,down:0}, m=getMyVotes()[key];
+      updateVBtn(up,'up',v.up,m);
+      updateVBtn(dn,'down',v.down,m);
+    }
+    refresh();
+    async function vote(dir){
+      const prev=getMyVotes()[key]||null;
+      const ndir=prev===dir?null:dir;
+      const m=getMyVotes();
+      if(ndir===null)delete m[key];else m[key]=ndir;
+      localStorage.setItem(NZ_MV,JSON.stringify(m));
+      try{
+        const r=await fetch('/api/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,dir:ndir,prev})});
+        SV[key]=await r.json();
+      }catch(e){}
+      refresh();
+    }
+    up.addEventListener('click',()=>vote('up'));
+    dn.addEventListener('click',()=>vote('down'));
+    wrap.append(up,dn);return wrap;
+  }
+
+  async function initInteractive(){
+    try{const r=await fetch('/api/state');const s=await r.json();SV=s.votes||{};SN=s.notes||{};SI=s.items||{};}catch(e){}
+
+    /* ---- tables: add Vote column + Add suggestion button ---- */
+    document.querySelectorAll('.opt-wrap').forEach(optWrap=>{
+      const sec=optWrap.closest('section.panel');
+      const sid=sec?sec.id:'x';
+      optWrap.querySelectorAll('div > h4').forEach(h4=>{
+        const tbl=h4.nextElementSibling;
+        if(!tbl||tbl.tagName!=='TABLE')return;
+        const tableKey=sid+'-'+slug(h4.textContent);
+
+        // Vote header
+        const hrow=tbl.querySelector('tr');
+        if(hrow){const th=document.createElement('th');th.textContent='Vote';hrow.appendChild(th);}
+
+        // Vote cell on every data row
+        tbl.querySelectorAll('tr:not(:first-child)').forEach(tr=>{
+          const nameTd=tr.querySelector('td:last-child');if(!nameTd)return;
+          const key=slug(sid+'-'+nameTd.textContent.trim());
+          const td=document.createElement('td');td.className='vtd';
+          td.appendChild(makeVoteWidget(key));tr.appendChild(td);
+        });
+
+        // Render a server-added item row
+        function addItemRow(item){
+          const tr=document.createElement('tr');
+          const td1=document.createElement('td');td1.innerHTML='<span class="pk opt">Added</span>';
+          const td2=document.createElement('td');
+          const safeUrl=item.url&&/^https?:\/\//.test(item.url)?item.url:'';
+          td2.innerHTML=(safeUrl?'<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener">'+esc(item.name)+'</a>':esc(item.name))
+            +(item.addedBy?' <span style="font-size:.72rem;color:var(--muted)">— '+esc(item.addedBy)+'</span>':'');
+          const td3=document.createElement('td');td3.className='vtd';
+          td3.appendChild(makeVoteWidget(slug(sid+'-'+item.name)));
+          tr.append(td1,td2,td3);tbl.appendChild(tr);
+        }
+        (SI[tableKey]||[]).forEach(addItemRow);
+
+        // Add suggestion button + inline form
+        const addBtn=document.createElement('button');
+        addBtn.className='add-row-btn';addBtn.textContent='+ Add a suggestion';
+        const form=document.createElement('div');form.className='add-item-form';
+        form.innerHTML=
+          '<input class="aif-name" placeholder="Name (e.g. Fergburger)" maxlength="80">'+
+          '<input class="aif-url" placeholder="Link/URL (optional)" maxlength="200">'+
+          '<input class="aif-by" placeholder="Your name (optional)" value="'+esc(getMyName())+'" maxlength="30">'+
+          '<div class="aif-row"><button class="aif-save" type="button">Add</button><button class="aif-cancel" type="button">Cancel</button></div>';
+        addBtn.addEventListener('click',()=>form.classList.toggle('open'));
+        form.querySelector('.aif-cancel').addEventListener('click',()=>form.classList.remove('open'));
+        form.querySelector('.aif-save').addEventListener('click',async()=>{
+          const name=form.querySelector('.aif-name').value.trim();
+          const url=form.querySelector('.aif-url').value.trim();
+          const by=form.querySelector('.aif-by').value.trim();
+          if(!name)return;
+          if(by)setMyName(by);
+          try{
+            const r=await fetch('/api/item',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tableKey,name,url,addedBy:by})});
+            const newItems=await r.json();SI[tableKey]=newItems;
+            addItemRow(newItems[newItems.length-1]);
+          }catch(e){}
+          form.classList.remove('open');
+          form.querySelector('.aif-name').value='';
+          form.querySelector('.aif-url').value='';
+        });
+        h4.parentElement.appendChild(addBtn);
+        h4.parentElement.appendChild(form);
+      });
+    });
+
+    /* ---- TBC items: vote widget before the orange "(to be confirmed)" ---- */
+    document.querySelectorAll('.wi').forEach(li=>{
+      const tbc=li.querySelector('.tbc');if(!tbc)return;
+      const sec=li.closest('section.panel');
+      const key=slug((sec?sec.id:'x')+'-tbc-'+li.textContent.trim().slice(0,50));
+      const widget=makeVoteWidget(key);
+      widget.classList.add('tbc-vwrap');
+      tbc.before(widget);
+    });
+
+    /* ---- Notes section at the bottom of each day's Options panel ---- */
+    document.querySelectorAll('.day').forEach(day=>{
+      const recs=day.querySelector('.recs');if(!recs)return;
+      const sec=day.closest('section.panel');
+      const sid=sec?sec.id:'x';
+      const ddate=day.querySelector('.ddate');
+      const dayKey=slug(sid+'-'+(ddate?ddate.textContent:'day'));
+
+      const ns=document.createElement('div');ns.className='notes-section';
+      ns.innerHTML=
+        '<h4 class="notes-hd">Group notes</h4>'+
+        '<div class="note-list"></div>'+
+        '<div class="note-input-wrap">'+
+        '<input class="note-name-in" placeholder="Your name" maxlength="30" value="'+esc(getMyName())+'">'+
+        '<textarea class="note-text-in" placeholder="Add a note for the group…" rows="2" maxlength="300"></textarea>'+
+        '<button class="note-submit-btn" type="button">Add note</button>'+
+        '</div>';
+
+      function renderNotes(){
+        const nl=ns.querySelector('.note-list');
+        const arr=SN[dayKey]||[];
+        nl.innerHTML=arr.length
+          ?arr.map(n=>'<div class="note-item"><span class="note-author">'+esc(n.name)+':</span> <span class="note-text">'+esc(n.text)+'</span></div>').join('')
+          :'<p class="no-notes">No notes yet</p>';
+      }
+      renderNotes();
+
+      ns.querySelector('.note-name-in').addEventListener('input',e=>setMyName(e.target.value));
+      ns.querySelector('.note-submit-btn').addEventListener('click',async()=>{
+        const nameIn=ns.querySelector('.note-name-in');
+        const textIn=ns.querySelector('.note-text-in');
+        const name=nameIn.value.trim()||'Anonymous';
+        const text=textIn.value.trim();if(!text)return;
+        setMyName(name);
+        try{
+          const r=await fetch('/api/note',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({section:dayKey,name,text})});
+          SN[dayKey]=await r.json();
+        }catch(e){}
+        textIn.value='';renderNotes();
+      });
+      recs.appendChild(ns);
+    });
+  }
+
+  initInteractive();
 </script>
 </body>
 </html>

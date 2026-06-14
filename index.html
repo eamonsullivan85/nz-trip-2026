@@ -22,11 +22,14 @@
     color:var(--ink);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
   a{color:var(--rec)}
   header.hero{background:linear-gradient(135deg,#0f4c9b,#1b7d3e 70%);color:#fff;padding:34px 22px 26px}
-  .hero-inner{max-width:1080px;margin:0 auto}
-  .hero h1{margin:0 0 6px;font-size:1.9rem;letter-spacing:.2px}
-  .hero .sub{font-size:1.02rem;opacity:.95}
-  .hero .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.86rem;opacity:.95}
-  .hero .meta b{font-weight:600}
+  .hero-inner{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
+  .hero-left h1{margin:0 0 5px;font-size:1.8rem;letter-spacing:.2px}
+  .hero-left .sub{font-size:.98rem;opacity:.9}
+  .hero-crew{display:flex;gap:18px;flex-shrink:0;align-items:flex-end;padding-bottom:3px}
+  .hero-crew-grp h4{font-size:.63rem;text-transform:uppercase;letter-spacing:.7px;opacity:.72;margin:0 0 5px;font-weight:700;text-align:center;color:#fff}
+  .hero-crew-row{display:flex;gap:3px}
+  .hero-crew .roster{height:42px;width:42px;object-fit:cover;object-position:top center;border-radius:6px;border:2px solid rgba(255,255,255,.35)}
+  @media(max-width:640px){.hero-crew{display:none}}
   nav.tabs{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);
     box-shadow:0 2px 8px rgba(20,40,70,.05)}
   .tabs-inner{max-width:1080px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;padding:0 10px}
@@ -53,7 +56,24 @@
   .b-travel{background:#eceef1;color:var(--travel)}
   .dot{width:11px;height:11px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px}
 
-  /* overview calendar */
+  /* Gantt overview */
+  .gantt-strip{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:4px 0 20px}
+  .gantt-loc-hdr{padding:7px 14px;font-size:.75rem;font-weight:700;color:#fff;letter-spacing:.5px;text-transform:uppercase}
+  .gantt-loc-hdr.qt-hdr{background:var(--qt)}.gantt-loc-hdr.wa-hdr{background:var(--wanaka)}
+  .gantt-loc-hdr.ma-hdr{background:var(--marsden)}.gantt-loc-hdr.tr-hdr{background:var(--travel)}
+  .gantt-days{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+  .gantt-days:last-child{border-bottom:none}
+  .gantt-cell{padding:10px 12px;border-right:1px solid var(--line);background:#fff;min-height:80px}
+  .gantt-cell:last-child{border-right:none}
+  .gantt-cell.empty{background:var(--bg);min-height:40px}
+  .gcdt{font-size:.67rem;font-weight:700;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+  .gcttl{font-size:.82rem;font-weight:700;color:var(--dark);margin-bottom:5px}
+  .gcblt{font-size:.74rem;color:#475569;line-height:1.6}
+  .gcblt .bk{color:var(--booked);font-weight:600}
+  .gcblt .tbc{color:#c2410c}
+  @media(max-width:640px){.gantt-days{grid-template-columns:repeat(2,1fr)}.gantt-cell.empty{display:none}}
+
+  /* overview calendar (legacy - day tabs still use .cal) */
   .cal{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
   .day-tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;box-shadow:var(--shadow);
     border-top:4px solid var(--line);min-height:118px}
@@ -224,9 +244,20 @@
 <noscript><div style="background:#fff8ec;border-bottom:1px solid #f3e2bd;padding:10px 14px;text-align:center;font-size:.9rem;color:#7a5a00">Tip: open this file in a web browser (Safari or Chrome) for the full version with tabs and photos. You can scroll to read every section below.</div></noscript>
 <header class="hero">
   <div class="hero-inner">
-    <h1>New Zealand Family Trip 2026</h1>
-    <div class="sub">Queenstown · Wanaka &amp; the ski week · Cromwell / Marsden Lake</div>
-    
+    <div class="hero-left">
+      <h1>New Zealand Family Trip 2026</h1>
+      <div class="sub">Queenstown · Wanaka &amp; the ski week · Cromwell / Marsden Lake</div>
+    </div>
+    <div class="hero-crew">
+      <div class="hero-crew-grp">
+        <h4>The Sullivans</h4>
+        <div class="hero-crew-row" id="hdr-sull"></div>
+      </div>
+      <div class="hero-crew-grp">
+        <h4>The Burgess'</h4>
+        <div class="hero-crew-row" id="hdr-burg"></div>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -246,69 +277,92 @@
 
 <!-- ===================== OVERVIEW ===================== -->
 <section class="panel active" id="overview">
-  <div class="crew"><h3 class="grp" style="margin:0 0 8px">The travel crew</h3><div class="two"><div class="colcard"><h4>The Sullivans</h4><div class="roster-row" id="sull-line"></div></div><div class="colcard"><h4>The Burgess'</h4><div class="roster-row" id="burg-line"></div></div></div></div>
-  <h2 class="sec">Trip at a glance</h2>
-  
+  <p style="font-size:.8rem;color:var(--muted);margin:0 0 14px">Items in <span style="color:#c2410c;font-weight:700">orange</span> are to be confirmed &middot; <span style="color:var(--booked);font-weight:600">green ✓</span> = confirmed booking</p>
+  <div class="gantt-strip">
 
-  <div class="legend">
-    <span><span class="dot" style="background:var(--qt)"></span>Queenstown</span>
-    <span><span class="dot" style="background:var(--wanaka)"></span>Wanaka</span>
-    <span><span class="dot" style="background:var(--marsden)"></span>Marsden Lake</span>
-    <span><span class="dot" style="background:var(--travel)"></span>Travel</span>
-    <span><span class="badge b-rest">Rest</span></span>
-    <span><span class="badge b-easy">Easy</span></span>
-    <span><span class="badge b-booked">Booked</span></span>
+    <div class="gantt-loc-hdr tr-hdr">Travel</div>
+    <div class="gantt-days">
+      <div class="gantt-cell"><div class="gcdt">Mon 29 Jun</div><div class="gcttl">Travel day</div><div class="gcblt">Fly to Queenstown</div></div>
+      <div class="gantt-cell empty"></div><div class="gantt-cell empty"></div><div class="gantt-cell empty"></div>
+    </div>
+
+    <div class="gantt-loc-hdr qt-hdr">Queenstown &middot; Tue 30 Jun &ndash; Mon 6 Jul &middot; 6 nights</div>
+    <div class="gantt-days">
+      <div class="gantt-cell">
+        <div class="gcdt">Tue 30 Jun</div><div class="gcttl">Arrive Queenstown</div>
+        <div class="gcblt">Check in ~2:30pm<br>Grocery + early dinner</div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Wed 1 Jul</div><div class="gcttl">Rest &amp; settle in</div>
+        <div class="gcblt">Fergburger lunch<br><span class="tbc">Kiwi Park ~11am</span><br><span class="tbc">Botswana ~7:30pm (dads)</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Thu 2 Jul</div><div class="gcttl">Walter Peak</div>
+        <div class="gcblt"><span class="bk">Walter Peak BBQ 11am ✓</span><br><span class="tbc">Skyline Luge ~3:30pm</span><br><span class="tbc">Sundays dinner ~5:30pm</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Fri 3 Jul</div><div class="gcttl">Gibbston + split</div>
+        <div class="gcblt">Dads AM free<br><span class="bk">Gibbston lunch 12:30 ✓</span><br>Mums PM free</div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Sat 4 Jul</div><div class="gcttl">Shotover + Bunker</div>
+        <div class="gcblt"><span class="tbc">Yonder bkfst ~8:30am</span><br><span class="tbc">Shotover Jet ~10:30am</span><br><span class="bk">The Bunker 8pm ✓</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Sun 5 Jul</div><div class="gcttl">Rest day</div>
+        <div class="gcblt">Free morning<br><span class="tbc">True South lunch ~1pm</span><br>Glenorchy if rested</div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Mon 6 Jul</div><div class="gcttl">Arrowtown + drive</div>
+        <div class="gcblt">Arrowtown<br><span class="bk">Mora lunch 12:30pm ✓</span><br>Drive to Wanaka · gear fitting</div>
+      </div>
+      <div class="gantt-cell empty"></div>
+    </div>
+
+    <div class="gantt-loc-hdr wa-hdr">Wanaka &middot; Tue 7 &ndash; Sun 12 Jul &middot; 6 nights &middot; Ski week</div>
+    <div class="gantt-days">
+      <div class="gantt-cell">
+        <div class="gcdt">Tue 7 Jul</div><div class="gcttl">Ski day 1</div>
+        <div class="gcblt"><span class="bk">Kids ski school ✓</span><br><span class="tbc">Francesca's dinner</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Wed 8 Jul</div><div class="gcttl">Ski day 2</div>
+        <div class="gcblt"><span class="bk">Kids ski school ✓</span><br><span class="tbc">Cinema ~3:30pm</span><br><span class="tbc">Hook dinner</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Thu 9 Jul</div><div class="gcttl">Ski day 3</div>
+        <div class="gcblt"><span class="bk">Kids ski school ✓</span><br><span class="tbc">Arc breakfast</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Fri 10 Jul</div><div class="gcttl">Easy day in town</div>
+        <div class="gcblt"><span class="tbc">Puzzling World ~10:30am</span><br><span class="tbc">Snow Farm ~2pm</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Sat 11 Jul</div><div class="gcttl">Treble Cone (dads)</div>
+        <div class="gcblt">Dads: Treble Cone<br><span class="tbc">Cardrona Hotel lunch</span></div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Sun 12 Jul</div><div class="gcttl">Drive to Marsden</div>
+        <div class="gcblt">Return gear + check out<br><span class="tbc">Moorings dinner</span></div>
+      </div>
+      <div class="gantt-cell empty"></div><div class="gantt-cell empty"></div>
+    </div>
+
+    <div class="gantt-loc-hdr ma-hdr">Cromwell / Marsden Lake &middot; Mon 13 &ndash; Tue 14 Jul &middot; 2 nights</div>
+    <div class="gantt-days">
+      <div class="gantt-cell">
+        <div class="gcdt">Mon 13 Jul</div><div class="gcttl">Rest &amp; explore</div>
+        <div class="gcblt"><span class="tbc">Highlands ~10:30am</span><br>Sitter night option</div>
+      </div>
+      <div class="gantt-cell">
+        <div class="gcdt">Tue 14 Jul</div><div class="gcttl">Departure</div>
+        <div class="gcblt">Check out<br>Drive to airport · fly home</div>
+      </div>
+      <div class="gantt-cell empty"></div><div class="gantt-cell empty"></div>
+    </div>
+
   </div>
 
-  <p style="font-size:.82rem;color:var(--muted);margin:0 0 14px">Items in <span style="color:#c2410c;font-weight:700">orange (to be confirmed)</span> are suggested slots for the group to confirm. The blue <b>Options</b> panels and the tables at the foot of each location page are extras to fill any gaps.</p>
-  <div class="cal" id="calendar"><div class="day-tile travel"><div class="dnum">Mon 29 Jun</div><div class="dttl">Travel</div><span class="badge b-travel">Travel</span><ul><li>Fly to Queenstown</li></ul></div><div class="day-tile qt"><div class="dnum">Tue 30 Jun</div><div class="dttl">Arrive QT</div><span class="badge b-easy">Easy</span><ul><li>Check in ~2:30pm</li><li>Grocery + early dinner</li></ul></div><div class="day-tile qt"><div class="dnum">Wed 1 Jul</div><div class="dttl">Settle in</div><span class="badge b-rest">Rest</span><ul><li>Fergburger lunch</li><li><span class="t-tbc">Kiwi Park ~11am</span></li><li><span class="t-tbc">Botswana ~7:30pm (dads)</span></li></ul></div><div class="day-tile qt"><div class="dnum">Thu 2 Jul</div><div class="dttl">Walter Peak</div><ul><li>Walter Peak 11–2:30 (booked)</li><li><span class="t-tbc">Skyline Luge ~3:30pm</span></li><li><span class="t-tbc">Sundays dinner ~5:30pm</span></li></ul></div><div class="day-tile qt"><div class="dnum">Fri 3 Jul</div><div class="dttl">Gibbston + split</div><ul><li>Dads AM free</li><li>Gibbston lunch 12:30 (booked)</li><li>Mums PM free</li></ul></div><div class="day-tile qt"><div class="dnum">Sat 4 Jul</div><div class="dttl">Shotover + dinner</div><ul><li><span class="t-tbc">Yonder bkfst ~8:30am</span></li><li><span class="t-tbc">Shotover ~10:30am</span></li><li>Bunker 8pm (booked)</li></ul></div><div class="day-tile qt"><div class="dnum">Sun 5 Jul</div><div class="dttl">Rest day</div><span class="badge b-rest">Rest</span><ul><li>Rest day</li><li><span class="t-tbc">True South lunch ~1pm</span></li><li>Glenorchy if rested</li></ul></div><div class="day-tile qt"><div class="dnum">Mon 6 Jul</div><div class="dttl">Arrowtown + drive</div><span class="badge b-easy">Easy</span><ul><li>Arrowtown</li><li>Mora lunch 12:30pm</li><li>Drive to Wanaka</li><li>Gear fitting</li></ul></div><div class="day-tile wanaka"><div class="dnum">Tue 7 Jul</div><div class="dttl">Ski day 1</div><ul><li>Kids ski school</li><li><span class="t-tbc">Francesca&#x27;s dinner</span></li></ul></div><div class="day-tile wanaka"><div class="dnum">Wed 8 Jul</div><div class="dttl">Ski day 2</div><ul><li>Kids ski school</li><li><span class="t-tbc">Cinema ~3:30pm</span></li><li><span class="t-tbc">Hook dinner</span></li></ul></div><div class="day-tile wanaka"><div class="dnum">Thu 9 Jul</div><div class="dttl">Ski day 3</div><ul><li>Kids ski school</li><li><span class="t-tbc">Arc breakfast</span></li></ul></div><div class="day-tile wanaka"><div class="dnum">Fri 10 Jul</div><div class="dttl">Easy day</div><span class="badge b-easy">Easy</span><ul><li>Off-mountain</li><li><span class="t-tbc">Puzzling ~10:30am</span></li><li><span class="t-tbc">Snow Farm ~2pm</span></li></ul></div><div class="day-tile wanaka"><div class="dnum">Sat 11 Jul</div><div class="dttl">Treble Cone</div><ul><li>Dads: Treble Cone</li><li><span class="t-tbc">Cardrona Hotel lunch</span></li><li>Kids: rest</li></ul></div><div class="day-tile marsden"><div class="dnum">Sun 12 Jul</div><div class="dttl">To Marsden</div><span class="badge b-easy">Easy</span><ul><li>Return gear</li><li>Drive to Cromwell</li><li><span class="t-tbc">Moorings dinner</span></li></ul></div><div class="day-tile marsden"><div class="dnum">Mon 13 Jul</div><div class="dttl">Rest & explore</div><span class="badge b-rest">Rest</span><ul><li><span class="t-tbc">Highlands ~10:30am</span></li><li>Sitter night option</li></ul></div><div class="day-tile marsden"><div class="dnum">Tue 14 Jul</div><div class="dttl">Departure</div><span class="badge b-travel">Travel</span><ul><li>Check out</li><li>Drive to airport</li></ul></div></div>
-
-  <h3 class="grp" style="margin-top:28px">Confirmed bookings</h3>
-  <div class="two">
-    <div class="colcard go">
-      <h4>TSS Earnslaw + Walter Peak BBQ</h4>
-      <ul>
-        <li>Thu 2 Jul · 11:00am – 2:30pm</li>
-        <li>Steamship to Walter Peak farm, BBQ lunch included</li>
-      </ul>
-    </div>
-    <div class="colcard go">
-      <h4>Gibbston Valley Winery lunch</h4>
-      <ul>
-        <li>Fri 3 Jul · 12:30pm · 25 min from town</li>
-        <li>Central Otago Pinot, cave + platter setting</li>
-      </ul>
-    </div>
-    <div class="colcard go">
-      <h4>The Bunker dinner</h4>
-      <ul>
-        <li>Sat 4 Jul · 8:00pm · 14 Cow Lane, Queenstown</li>
-        <li>Adults night out — babysitters from 6pm</li>
-      </ul>
-    </div>
-    <div class="colcard go">
-      <h4>Mora Winery lunch</h4>
-      <ul>
-        <li>Mon 6 Jul · 12:30pm · Arrowtown</li>
-        <li>On the way through to Wanaka</li>
-      </ul>
-    </div>
-    <div class="colcard go">
-      <h4>Ski gear fitting — Racers Edge</h4>
-      <ul>
-        <li>Mon 6 Jul · Wanaka arrival day</li>
-        <li>99 Ardmore Street · 03 443 7882</li>
-        <li>Open 7:30am – 7:30pm daily</li>
-      </ul>
-    </div>
-    <div class="colcard go">
-      <h4>Kids ski school — Cardrona</h4>
-      <ul>
-        <li>Tue 7 Jul – Fri 10 Jul</li>
-        <li>Group lessons · gear hire Mon–Fri included</li>
-      </ul>
-    </div>
-  </div>
 
 </section>
 
@@ -808,8 +862,8 @@
   document.querySelectorAll('.cut-big').forEach(el=>{el.outerHTML='<img class="spa-big" src="'+PIC[el.dataset.who]+'" alt="">';});
   function lineup(id,names){const c=document.getElementById(id);if(!c)return;
     names.forEach((n)=>{const im=document.createElement('img');im.src=PIC[n];im.className='roster';c.appendChild(im);});}
-  lineup('sull-line',['EAMON','NAOMIWED','LEO','LIVVY']);
-  lineup('burg-line',['SCOTT','JO','EVELYN','GUS']);
+  lineup('hdr-sull',['EAMON','NAOMIWED','LEO','LIVVY']);
+  lineup('hdr-burg',['SCOTT','JO','EVELYN','GUS']);
 
   /* ============================================================
      VOTES · NOTES · ADD SUGGESTIONS

@@ -4,9 +4,14 @@
   "private": true,
   "description": "New Zealand family trip 2026 itinerary",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "generate": "node generate-content.js",
+    "sync": "node sync.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
   }
 }

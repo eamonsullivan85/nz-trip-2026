@@ -330,9 +330,11 @@
     <div class="plan">
       <div class="dhead"><span class="ddate">Thu 2 Jul</span><span class="dsub">Walter Peak + Luge</span></div>
       <div class="booked-row"><b>BOOKED:</b> Walter Peak Gourmet BBQ, 11:00am to 2:30pm. TSS Earnslaw steamship across the lake plus farm BBQ lunch.</div>
+      <div class="booked-row"><b>BOOKED:</b> Dinner at The Bunker, 8:00pm, 14 Cow Lane. Dads' date night — line up a sitter for the evening.</div>
       <ul>
         <li>Walter Peak BBQ cruise, 11:00am (booked, see above).</li>
         <li class="wi"><b>~3:30pm</b> Skyline Gondola &amp; Luge, after the cruise if energy is good <span class="tbc">(to be confirmed)</span></li>
+        <li><b>~8:00pm</b> The Bunker dinner (booked). Sitter needed for the evening.</li>
       </ul>
       <div class="split"><b>Pacing flag:</b> Walter Peak runs 11am to 2:30pm, so doing the Luge as well is a big day for the under 6s. I would do the Gondola and Luge in the late afternoon after the cruise only if the kids are still firing, otherwise push Luge to a quieter slot and let Walter Peak be the whole day.</div>
     </div>
@@ -367,12 +369,10 @@
   <!-- Sat 4 Jul -->
   <div class="day">
     <div class="plan">
-      <div class="dhead"><span class="ddate">Sat 4 Jul</span><span class="dsub">Shotover Jet + dinner out</span></div>
-      <div class="booked-row"><b>BOOKED:</b> Dinner at The Bunker, 8:00pm, 14 Cow Lane. Adults' night, line up a sitter.</div>
+      <div class="dhead"><span class="ddate">Sat 4 Jul</span><span class="dsub">Shotover Jet day</span></div>
       <ul>
-        <li class="wi"><b>~10:30am</b> Shotover Jet for those interested, loud, fast and splashy <span class="tbc">(to be confirmed)</span></li>
+        <li class="wi" data-novote><b>~10:30am</b> Shotover Jet for those interested, loud, fast and splashy <span class="tbc">(to be confirmed)</span></li>
         <li class="wi"><b>~8:30am</b> Breakfast at Yonder <span class="tbc">(to be confirmed)</span></li>
-        <li>PM: nice dinner out, sort the babysitter through the hotel.</li>
       </ul>
       <div class="split"><b>Split plan:</b> Shotover Jet suits Leo and Livvy and the thrill-seeking adults. Gus is likely too young and may find it intense, so one parent does a snow-free morning with the littlies (playground, hot chocolate) while the others jet.</div>
     </div>
@@ -390,7 +390,7 @@
       <div class="dhead"><span class="ddate">Sun 5 Jul</span><span class="dsub">Rest day</span><span class="badge b-rest">Rest</span></div>
       <ul>
         <li>Free day, let the kids recharge before the move to Wanaka.</li>
-        <li class="wi"><b>~1:00pm</b> True South long lunch with the hotel babysitter (you flagged this) <span class="tbc">(to be confirmed)</span></li>
+        <li class="wi" data-novote><b>~1:00pm</b> True South long lunch with the hotel babysitter (you flagged this) <span class="tbc">(to be confirmed)</span></li>
       </ul>
     </div>
     <div class="recs">
@@ -447,7 +447,7 @@
     <table class="t">
       <tr><th>Pick</th><th>Dining</th></tr>
       <tr><td><span class="pk bk">Booked</span></td><td><a href="https://www.realnz.com" target="_blank" rel="noopener">Walter Peak BBQ</a></td></tr>
-      <tr><td><span class="pk bk">Booked</span></td><td><a href="https://www.google.com/search?q=The+Bunker+Queenstown+restaurant" target="_blank" rel="noopener">The Bunker</a></td></tr>
+      <tr data-novote><td><span class="pk bk">Booked</span></td><td><a href="https://www.google.com/search?q=The+Bunker+Queenstown+restaurant" target="_blank" rel="noopener">The Bunker</a></td></tr>
       <tr><td><span class="pk go">Work in</span></td><td><a href="https://www.google.com/search?q=Sundays+Queenstown+pizza" target="_blank" rel="noopener">Sundays</a></td></tr>
       <tr><td><span class="pk go">Work in</span></td><td><a href="https://www.google.com/search?q=Botswana+Butchery+Queenstown" target="_blank" rel="noopener">Botswana Butchery</a></td></tr>
       <tr><td><span class="pk go">Work in</span></td><td><a href="https://www.google.com/search?q=True+South+Dining+Room+The+Rees+Queenstown" target="_blank" rel="noopener">True South (The Rees)</a></td></tr>
@@ -459,6 +459,7 @@
       <tr><td><span class="pk opt">Option</span></td><td><a href="https://www.google.com/search?q=The+Cow+Queenstown+pizza" target="_blank" rel="noopener">The Cow</a></td></tr>
       <tr><td><span class="pk opt">Option</span></td><td><a href="https://www.skyline.co.nz/en/queenstown/dining/" target="_blank" rel="noopener">Stratosfare (Skyline)</a></td></tr>
       <tr><td><span class="pk opt">Option</span></td><td><a href="https://www.google.com/search?q=Jervois+Steak+House+Queenstown" target="_blank" rel="noopener">Jervois Steak House</a></td></tr>
+      <tr><td><span class="pk opt">Option</span></td><td><a href="https://mora.co.nz/restaurant" target="_blank" rel="noopener">Mora Wines</a></td></tr>
     </table>
   </div>
   </div>
@@ -851,8 +852,9 @@
         const hrow=tbl.querySelector('tr');
         if(hrow){const th=document.createElement('th');th.textContent='Vote';hrow.appendChild(th);}
 
-        // Vote cell on every data row
+        // Vote cell on every data row (skip rows marked data-novote)
         tbl.querySelectorAll('tr:not(:first-child)').forEach(tr=>{
+          if(tr.dataset.novote!==undefined)return;
           const nameTd=tr.querySelector('td:last-child');if(!nameTd)return;
           const key=slug(sid+'-'+nameTd.textContent.trim());
           const td=document.createElement('td');td.className='vtd';
@@ -907,6 +909,7 @@
     /* ---- TBC items: vote widget before the orange "(to be confirmed)" ---- */
     document.querySelectorAll('.wi').forEach(li=>{
       const tbc=li.querySelector('.tbc');if(!tbc)return;
+      if(li.dataset.novote!==undefined)return;
       const sec=li.closest('section.panel');
       const key=slug((sec?sec.id:'x')+'-tbc-'+li.textContent.trim().slice(0,50));
       const widget=makeVoteWidget(key);

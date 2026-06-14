@@ -107,12 +107,11 @@
   .booked-row b{color:var(--booked)}
   .split{border:1px dashed #c7d2dd;border-radius:7px;padding:7px 10px;margin:8px 0;font-size:.86rem;background:#fafcfe}
   .split b{color:var(--ink)}
-  .recs h4{margin:0 0 8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;color:var(--rec);font-weight:800}
-  .recs .rec{margin:0 0 11px;font-size:.86rem}
-  .recs .rec .t{font-weight:700;display:block}
-  .recs .rec .who{display:inline-block;font-size:.7rem;color:#fff;background:var(--rec);border-radius:4px;padding:1px 6px;margin-top:3px}
-  .recs .rec .who.little{background:#1b7d3e} .recs .rec .who.adult{background:#6b3fa0} .recs .rec .who.all{background:#0f4c9b}
+  .recs > h4{display:none}
+  .recs .rec{display:none}
   .recs .empty{font-size:.84rem;color:var(--muted)}
+  .recs .cutout{width:56px;margin:10px 0 0 6px}
+  .recs .spa-big{width:56px;max-width:56px;float:right;margin:10px 0 0 6px}
 
   /* generic tables */
   table.t{width:100%;border-collapse:collapse;font-size:.86rem;background:#fff;border:1px solid var(--line);
@@ -200,7 +199,7 @@
   .tbc-vwrap{display:inline-flex;gap:3px;vertical-align:middle;margin-right:5px}
   /* --- notes section --- */
   .notes-section{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
-  .notes-hd{margin:0 0 8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:800}
+  .notes-hd{margin:0 0 8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;color:var(--rec);font-weight:800}
   .note-list{margin:0 0 8px}
   .note-item{background:#f5f7fa;border-radius:6px;padding:6px 9px;margin:4px 0;font-size:.82rem;line-height:1.4}
   .note-author{font-weight:700;color:var(--ink);margin-right:4px}
@@ -1025,7 +1024,7 @@
         }catch(e){}
         textIn.value='';renderNotes();
       });
-      recs.appendChild(ns);
+      recs.prepend(ns);
     });
   }
 
